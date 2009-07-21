@@ -1,0 +1,23 @@
+FBConnect module for Cognifty
+================================================================================
+FBConnect is a module for Cognifty which provides libraries and a login method 
+for facebook connect.
+
+When installed this module can show your FB user photo next to the logout 
+navigaiton.  It can also allow you to post blog comments and register on the 
+site.
+
+When a user connects this app to facebook for the first time, a new user will
+be created in Cognifty with no username and no email.  This user will not be 
+able to log-in through normal means, but will have an account ID and user ID.  
+The user will be connected via the fb_uid_link table.
+
+INSTALL
+================================================================================
+
+1. Copy the config.ini to local.ini in this directory
+2. Add your API key and Secret key to the local.ini file
+3. Edit your boot/local/layout.ini and add: (one line)
+nav.fbconnect.badge=
+@sys.path@/local-modules/fbconnect/lib/Cgn_Facebook_Slots.php:Cgn_Facebook_Slots:fbconnect:getLoginBadge
+4. Install the SQL files.

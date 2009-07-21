@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<project name="FBConnect module" default="install" basedir=".">
+  <target name="install">
+      <phingcall target="Copyfiles"/>
+<!--
+      <phingcall target="addSlot"/>
+-->
+  </target>
+  <target name="Copyfiles"
+      description="Copy files from source directory (${module.source.dir}) into the target directory (${module.target.dir})">
+      <copy todir="${module.target.dir}">
+          <fileset dir="${module.source.dir}">
+              <exclude name="install.ini"/>
+          </fileset>
+      </copy>
+  </target>
+
+<!--
+  <target name="addSlot"
+      description="Setup a slot for navi, login and blog pages">
+	  
+  </target>
+-->
+</project>
