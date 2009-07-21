@@ -65,13 +65,29 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 	 * Clear fb_uid from session
 	 */
 	function logoutEvent($req, &$t) {
+
+		Cgn::loadModLibrary('Fbconnect::Facebook');
+		Cgn::loadModLibrary('Fbconnect::FacebookRestClient');
+		$fbObj = $this->getFb($req);
+
 		$req->clearSessionVar('fb_uid');
 		$req->clearSessionVar('fb_expires');
 		$req->clearSessionVar('fb_session_key');
-		//hit this URL to avoid cross domain cookies
-		//http://www.facebook.com/logout.php?app_key=XXX&session_key=XXX&extern=2&next=XXX&locale=en_US
+		$req->clearSessionVar('fb_secret');
+		$req->clearSessionVar('fb_sig');
+
 		$this->presenter = 'redirect';
-		$t['url'] = cgn_appurl('fbconnect');
+		if (strlen($_SERVER['HTTP_REFERER'])) 
+			$next = urlencode($_SERVER['HTTP_REFERER']);
+		else
+			$next = urlencode(cgn_appurl('fbconnect'));
+
+		//hit this URL to stop FB Javascript from re-detecting logged-in status
+		//http://www.facebook.com/logout.php?app_key=XXX&session_key=XXX&extern=2&next=XXX&locale=en_US
+		$t['url'] = 'http://www.facebook.com/logout.php?app_key='.$fbObj->api_key.
+			'&session_key='.$fbObj->api_client->session_key.'&extern=2&next='.$next;
+		//don't call this any earlier, it also un-sets session_key
+		$fbObj->clear_cookie_state();
 	}
 
 	/**

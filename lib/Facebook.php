@@ -244,13 +244,19 @@ class Facebook {
 	 *
 	 */
 	public function clear_cookie_state() {
+
+		$cookiePath = cgn_url();
 		if (!$this->in_fb_canvas() && isset($_COOKIE[$this->api_key . '_user'])) {
 			$cookies = array('user', 'session_key', 'expires', 'ss');
 			foreach ($cookies as $name) {
 				setcookie($this->api_key . '_' . $name, false, time() - 3600);
+				setcookie($this->api_key . '_' . $name, false, time() - 3600, $cookiePath);
+				setcookie($this->api_key . '_' . $name, false, time() - 3600, '/');
 				unset($_COOKIE[$this->api_key . '_' . $name]);
 			}
 			setcookie($this->api_key, false, time() - 3600);
+			setcookie($this->api_key, false, time() - 3600, $cookiePath);
+			setcookie($this->api_key, false, time() - 3600, '/');
 			unset($_COOKIE[$this->api_key]);
 		}
 
