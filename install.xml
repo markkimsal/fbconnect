@@ -2,6 +2,7 @@
 <project name="FBConnect module" default="install" basedir=".">
   <target name="install">
       <phingcall target="Copyfiles"/>
+      <phingcall target="createtable"/>
 <!--
       <phingcall target="addSlot"/>
 -->
@@ -13,6 +14,14 @@
               <exclude name="install.ini"/>
           </fileset>
       </copy>
+  </target>
+  <target name="createtable"
+	  description="Make a new SQL table 'fb_uid_link' to save facebook user IDs. (${module.target.dir}/sql/install/fb_uid_link.mysql.sql)">
+	  <pdo>
+		  <fileset dir="${module.target.dir}/sql/install/">
+              <include name="*.sql"/>
+          </fileset>
+	  </pdo>
   </target>
 
 <!--

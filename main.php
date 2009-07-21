@@ -119,6 +119,9 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$q = Facebook::generate_sig($fb_params, $apisecret);
 		if ($session->sig && $q == $session->sig) {
 			$fbObj        = $this->getFb($req);
+			//HACK to fix Facebook's strange xdreceive handling of 
+			//logins and cookies
+			$fbObj->api_client->session_key = $session->session_key;
 			$fbObj->set_cookies($session->uid,
 				$session->session_key,
 				$session->expires,
@@ -127,17 +130,6 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 			//sig does not match
 			die('sig does not match');
 		}
-
-
-		//		$fbSession = json_decode($req->cleanString('session'));
-		if ($fbOjb->user == 0 ) {
-			//XD Cookies are not accepted
-		}
-		/*
-		$fbExpires    = $fbObj->session_expires;
-		$fbUid        = $fbObj->user;
-		$fbSessionKey = $fbObj->api_client->session_key;
-		 */
 
 		$fbExpires    = $session->session_expires;
 		$fbUid        = $session->uid;
@@ -149,6 +141,21 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$req->setSessionVar('fb_session_key',  $fbSessionKey);
 		$req->setSessionVar('fb_secret',       $fbSessionSecret);
 		$req->setSessionVar('fb_sig',          $session->sig);
+
+		$u = $req->getUser();
+		//find a user which has connected before
+		if(! $this->_connectFbUser($fbUid, $u)) {
+			try {
+				$fbInfos = $fbObj->api_client->users_getInfo($fbUid,
+				array('username', 'name', 'first_name', 'last_name'));
+			} catch (Exception $e) {
+				echo "Exception ".$e->getMessage()."<br/>\n";
+			}
+
+			//make a new user
+			$newUser = $this->_createNewFbUser($fbUid, $u, $fbInfos);
+			$this->_createNewFbAcct($fbUid, $newUser, $fbObj, $fbInfos);
+		}
 	}
 
 	/**
@@ -259,6 +266,90 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
       		$str .= "$_k=$_v";
 		}
 		return $fb_params;
+	}
+
+	protected function _connectFbUser($fbuid, $u) {
+		$newUser = $this->_findUserByFb($fbuid);
+		if (!$newUser) {
+			return FALSE;
+		}
+		$u->userId = $newUser->cgn_user_id;
+		$u->username = $newUser->username;
+		$u->password = $newUser->password;
+		$u->email    = $newUser->email;
+		$u->bindSession();
+		return TRUE;
+	}
+
+	protected function _findUserByFb($fbuid) {
+		$finder = new Cgn_DataItem('fb_uid_link');
+
+		$finder->_cols = array('Tuser.*');
+		$finder->hasOne('cgn_user', 'cgn_user_id', 'Tuser', 'cgn_user_id');
+		$finder->andWhere('fb_uid', $fbuid);
+		$userList = $finder->find();
+		if (isset($userList[0]))
+			return $userList[0];
+		else
+			return FALSE;
+	}
+
+	protected function _createNewFbUser($fbuid, $u, $fbInfos) {
+		$newUser = $this->_createUserByFb($fbuid, $fbInfos);
+		if (!$newUser) {
+			return FALSE;
+		}
+		$u->userId = $newUser->cgn_user_id;
+		$u->username = $newUser->username;
+		$u->password = $newUser->password;
+		$u->email    = $newUser->email;
+		$u->bindSession();
+		return $newUser;
+	}
+
+	protected function _createUserByFb($fbUid, $fbInfos) {
+		$newUser = new Cgn_DataItem('cgn_user');
+		$newUser->set('username', '');
+		$newUser->set('email',    '');
+		$newUser->set('password', '');
+		$newUser->set('active_on', time());
+
+		$cgnUserId = $newUser->save();
+
+		$fbLink = new Cgn_DataItem('fb_uid_link');
+		$fbLink->load( array('fb_uid = '.$fbUid) );
+		$fbLink->set('cgn_user_id', $cgnUserId);
+		$fbLink->set('fb_uid',      $fbUid);
+		$fbLink->save();
+
+		return $newUser;
+	}
+
+	protected function _createNewFbAcct($fbUid, $u, $fbObj, $fbInfos) {
+
+		$firstName = 'Guset';
+		$lastName  = 'User';
+
+		if (isset($fbiIfos[0]['name'])) {
+			$parts = explode(' ', $fbInfos[0]['name']);
+			$firstName = array_shift($parts);
+			$lastName  = implode(' ', $parts);
+		}
+		if (isset($fbInfos[0]['first_name'])) {
+			$firstName = $fbInfos[0]['first_name'];
+		}
+		if (isset($fbInfos[0]['last_name'])) {
+			$lastName = $fbInfos[0]['last_name'];
+		}
+
+		$cgnUserId = $u->get('cgn_user_id');
+		$newAcct = new Cgn_DataItem('cgn_account');
+		$newAcct->load( array('cgn_user_id = '.$cgnUserId) );
+		$newAcct->set('cgn_user_id', $cgnUserId);
+		$newAcct->set('firstname',   $firstName);
+		$newAcct->set('lastname',    $lastName);
+		$newAcct->set('ref_no',      $fbUid);
+		$newAcct->save();
 	}
 }
 

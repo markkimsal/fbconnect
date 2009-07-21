@@ -55,7 +55,7 @@ class FacebookRestClient {
   private $pending_batch;
   private $call_as_apikey;
   private $use_curl_if_available;
-  private $format = null;
+  private $format = 'json';
 
   const BATCH_MODE_DEFAULT = 0;
   const BATCH_MODE_SERVER_PARALLEL = 0;
