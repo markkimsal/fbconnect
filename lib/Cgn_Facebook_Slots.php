@@ -23,7 +23,7 @@ class Cgn_Facebook_Slots {
 			return $str3;
 		}
 		//not logged in, show the FBXML button
-		return '<br style="clear:both;" /> <div class="fb-badge-button"><fb:login-button autologoutlink="false"></fb:login-button></div>';
+		return '<br style="clear:both;" /> <div class="fb-badge-button"><fb:login-button size="medium" length="long" autologoutlink="false"></fb:login-button></div>';
 //		return '<br style="clear:both;" /> <img src="http://static.ak.fbcdn.net/images/fbconnect/login-buttons/connect_light_large_short.gif"/>';
 	}
 

@@ -250,6 +250,7 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$fb_params = array();
 		$str = '';
 		foreach ($_s as $_k => $_v) {
+			if ($_k == 'base_domain') continue;
 			if ($_k == 'sig') continue;
 			if ($_k == 'secret'){ 
 				$fb_params['ss'] = $_v;
