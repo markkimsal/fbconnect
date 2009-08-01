@@ -154,6 +154,11 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 
 			//make a new user
 			$newUser = $this->_createNewFbUser($fbUid, $u, $fbInfos);
+			if (!$newUser) {
+				//some error with registration, show template and error.
+				//this is highly unlikely
+				return FALSE;
+			}
 			$this->_createNewFbAcct($fbUid, $newUser, $fbObj, $fbInfos);
 		}
 	}
@@ -300,7 +305,7 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		if (!$newUser) {
 			return FALSE;
 		}
-		$u->userId = $newUser->cgn_user_id;
+		$u->userId   = $newUser->userId;
 		$u->username = $newUser->username;
 		$u->password = $newUser->password;
 		$u->email    = $newUser->email;
@@ -309,13 +314,20 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 	}
 
 	protected function _createUserByFb($fbUid, $fbInfos) {
-		$newUser = new Cgn_DataItem('cgn_user');
-		$newUser->set('username', '');
-		$newUser->set('email',    '');
-		$newUser->set('password', '');
-		$newUser->set('active_on', time());
+		$newUser = new Cgn_User();
+		$newUser->username  = '';
+		$newUser->email     = '';
+		$newUser->password  = '';
+		$newUser->active_on = time();
 
-		$cgnUserId = $newUser->save();
+		if (!Cgn_User::registerUser($newUser, 'facebook')) {
+			trigger_error('user already exists');
+			return FALSE;
+		}
+		$cgnUserId = $newUser->userId;
+		if ($cgnUserId < 1) {
+			return FALSE;
+		}
 
 		$fbLink = new Cgn_DataItem('fb_uid_link');
 		$fbLink->load( array('fb_uid = '.$fbUid) );
@@ -343,7 +355,7 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 			$lastName = $fbInfos[0]['last_name'];
 		}
 
-		$cgnUserId = $u->get('cgn_user_id');
+		$cgnUserId = $u->userId;
 		$newAcct = new Cgn_DataItem('cgn_account');
 		$newAcct->load( array('cgn_user_id = '.$cgnUserId) );
 		$newAcct->set('cgn_user_id', $cgnUserId);
