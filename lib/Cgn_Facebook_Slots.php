@@ -114,14 +114,18 @@ class Cgn_Facebook_Slots {
 		Cgn_Template::addSiteJs('<script type="text/javascript">
 				function onConnected(uid) {
 					if (document.getElementById(\'fb_login_image\')) {
-						if (fb_onConnectedSlot)
+						if (window.fb_onConnectedSlot !== undefined)
 							fb_onConnectedSlot(uid)
+						else
+							window.location.reload();
 					}
 				}
 				function onNotConnected(uid) {
 					if (!document.getElementById(\'fb_login_image\')) {
-						if (fb_onNotConnectedSlot)
+						if (window.fb_onNotConnectedSlot !== undefined)
 							fb_onNotConnectedSlot(uid)
+						else 
+							window.location.reload();
 					}
 				}
 			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'",
