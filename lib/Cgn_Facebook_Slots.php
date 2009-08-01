@@ -8,6 +8,9 @@ class Cgn_Facebook_Slots {
 		Cgn::loadModLibrary('Fbconnect::Facebook');
 		Cgn::loadModLibrary('Fbconnect::FacebookRestClient');
 
+		$apikey = $this->getConfig('api.key');
+		$this->_addJsToTemplate($apikey);
+
 		$req = Cgn_SystemRequest::getCurrentRequest();
 		$fbObj = $this->getFb($req);
 		$fbUid = $fbObj->user;
@@ -97,5 +100,13 @@ class Cgn_Facebook_Slots {
 		//don't call this any earlier, it also un-sets session_key
 		$fbObj->clear_cookie_state();
 		return $url;
+	}
+
+	protected function _addJsToTemplate($apikey) {
+		Cgn_Template::addSiteJs('http://static.ak.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
+		Cgn_Template::addSiteJs('<script type="text/javascript">
+	FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'");
+</script>');
+
 	}
 }
