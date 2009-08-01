@@ -102,11 +102,30 @@ class Cgn_Facebook_Slots {
 		return $url;
 	}
 
+	/**
+	 * This will add JS to the template which you can hook into when 
+	 * a user is recognized as being from Facebook.com
+	 *
+	 * js functions fb_onConnectedSlot and fb_onNotConnectedSlot will 
+	 * be called if they exist and will be passed the UID of the user
+	 */
 	protected function _addJsToTemplate($apikey) {
 		Cgn_Template::addSiteJs('http://static.ak.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
 		Cgn_Template::addSiteJs('<script type="text/javascript">
-	FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'");
-</script>');
-
+				function onConnected(uid) {
+					if (document.getElementById(\'fb_login_image\')) {
+						if (fb_onConnectedSlot)
+							fb_onConnectedSlot(uid)
+					}
+				}
+				function onNotConnected(uid) {
+					if (!document.getElementById(\'fb_login_image\')) {
+						if (fb_onNotConnectedSlot)
+							fb_onNotConnectedSlot(uid)
+					}
+				}
+			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'",
+			{"ifUserConnected":onConnected, "ifUserNotConnected":onNotConnected} ); </script>'
+		);
 	}
 }
