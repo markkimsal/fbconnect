@@ -13,7 +13,16 @@ class Cgn_Facebook_Slots {
 
 		$req = Cgn_SystemRequest::getCurrentRequest();
 		$fbObj = $this->getFb($req);
+
 		$fbUid = $fbObj->user;
+
+		if ($fbUid < 1 && $fbObj->session_expires > 0) {
+			//make sure user is not logged in, they might be logged in but
+			//our cookies are old
+			$fbObj->promote_session();
+			$fbUid = $fbObj->user;
+		}
+
 		if ($fbUid > 1) {
 			$show_logo = true;
 			$str3 = ' <br style="clear:both;" />
