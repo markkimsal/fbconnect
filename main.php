@@ -303,7 +303,11 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 	protected function _createNewFbUser($fbuid, $u, $fbInfos) {
 		$newUser = $this->_createUserByFb($fbuid, $fbInfos);
 		if (!$newUser) {
-			return FALSE;
+			if(! $this->_connectFbUser($fbUid, $u)) {
+				return FALSE;
+			} else {
+				return TRUE;
+			}
 		}
 		$u->userId   = $newUser->userId;
 		$u->username = $newUser->username;
@@ -315,13 +319,14 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 
 	protected function _createUserByFb($fbUid, $fbInfos) {
 		$newUser = new Cgn_User();
-		$newUser->username  = '';
+		$newUser->username  = $fbUid;
 		$newUser->email     = '';
 		$newUser->password  = '';
 		$newUser->active_on = time();
+		$newUser->idProviderToken = $fbUid;
 
 		if (!Cgn_User::registerUser($newUser, 'facebook')) {
-			trigger_error('user already exists');
+			//trigger_error('user already exists');
 			return FALSE;
 		}
 		$cgnUserId = $newUser->userId;

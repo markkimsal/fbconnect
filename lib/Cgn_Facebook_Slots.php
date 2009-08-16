@@ -23,7 +23,7 @@ class Cgn_Facebook_Slots {
 			$fbUid = $fbObj->user;
 		}
 
-		if ($fbUid > 1 && $fbOjb->session_expires > time()) {
+		if ($fbUid > 1 && $fbOjb->session_expires < time()) {
 			$show_logo = true;
 			$str3 = ' <br style="clear:both;" />
 				<div class="fb-badge-img" style="float:right"><fb:profile-pic uid="'.$fbUid.'" size="square" ' . ($show_logo ? ' facebook-logo="true"' : '') . '></fb:profile-pic>
