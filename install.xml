@@ -7,6 +7,11 @@
       <phingcall target="addSlot"/>
 -->
   </target>
+
+  <target name="upgrade_any_to_2">
+      <phingcall target="Copyfiles"/>
+  </target>
+
   <target name="Copyfiles"
       description="Copy files from source directory (${module.source.dir}) into the target directory (${module.target.dir})">
       <copy todir="${module.target.dir}">
