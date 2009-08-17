@@ -23,7 +23,9 @@ class Cgn_Facebook_Slots {
 			$fbUid = $fbObj->user;
 		}
 
-		if ($fbUid > 1 && $fbObj->session_expires < time()) {
+		if ($fbUid > 1 && $fbObj->session_expires > time()) {
+			$u = $req->getUser();
+			$this->_connectFbUser($fbUid, $u);
 			$show_logo = true;
 			$str3 = ' <br style="clear:both;" />
 				<div class="fb-badge-img" style="float:right"><fb:profile-pic uid="'.$fbUid.'" size="square" ' . ($show_logo ? ' facebook-logo="true"' : '') . '></fb:profile-pic>
@@ -132,13 +134,41 @@ class Cgn_Facebook_Slots {
 				function onNotConnected(uid) {
 					if (!document.getElementById(\'fb_login_image\')) {
 						if (window.fb_onNotConnectedSlot !== undefined)
-							fb_onNotConnectedSlot(uid)
+						FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
 						else 
-							window.location.reload();
+						FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
 					}
 				}
 			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'",
 			{"ifUserConnected":onConnected, "ifUserNotConnected":onNotConnected} ); </script>'
 		);
 	}
+
+	protected function _connectFbUser($fbuid, $u) {
+		$newUser = $this->_findUserByFb($fbuid);
+		if (!$newUser) {
+			return FALSE;
+		}
+		$u->userId = $newUser->cgn_user_id;
+		$u->username = $newUser->username;
+		$u->password = $newUser->password;
+		$u->email    = $newUser->email;
+		$u->bindSession();
+		return TRUE;
+	}
+
+	protected function _findUserByFb($fbuid) {
+		$finder = new Cgn_DataItem('fb_uid_link');
+
+		$finder->_cols = array('Tuser.*');
+		$finder->hasOne('cgn_user', 'cgn_user_id', 'Tuser', 'cgn_user_id');
+		$finder->andWhere('fb_uid', $fbuid);
+		$finder->_rsltByPkey = false;
+		$userList = $finder->find();
+		if (isset($userList[0]))
+			return $userList[0];
+		else
+			return FALSE;
+	}
+
 }

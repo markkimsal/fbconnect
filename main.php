@@ -293,6 +293,7 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$finder->_cols = array('Tuser.*');
 		$finder->hasOne('cgn_user', 'cgn_user_id', 'Tuser', 'cgn_user_id');
 		$finder->andWhere('fb_uid', $fbuid);
+		$finder->_rsltByPkey = false;
 		$userList = $finder->find();
 		if (isset($userList[0]))
 			return $userList[0];
