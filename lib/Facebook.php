@@ -44,7 +44,7 @@ class Facebook {
 	public $user;
 	public $profile_user;
 	public $canvas_user;
-	protected $base_domain;
+	public $base_domain;
 	/*
 	 * Create a Facebook client like this:
 	 *
@@ -245,19 +245,21 @@ class Facebook {
 	 */
 	public function clear_cookie_state() {
 
-		$cookiePath = cgn_url();
+//		$cookiePath = cgn_url();
+		$cookiePath = '/';
 		if (!$this->in_fb_canvas() && isset($_COOKIE[$this->api_key . '_user'])) {
 			$cookies = array('user', 'session_key', 'expires', 'ss');
 			foreach ($cookies as $name) {
-				setcookie($this->api_key . '_' . $name, false, time() - 3600);
-				setcookie($this->api_key . '_' . $name, false, time() - 3600, $cookiePath);
+//				setcookie($this->api_key . '_' . $name, false, time() - 7200);
+//				setcookie($this->api_key . '_' . $name, false, time() - 7200, $cookiePath);
+				setcookie($this->api_key . '_' . $name, false, time() - 7200, $cookiePath, $this->base_domain);
 				unset($_COOKIE[$this->api_key . '_' . $name]);
 			}
-			setcookie($this->api_key, false, time() - 3600);
-			setcookie($this->api_key, false, time() - 3600, $cookiePath);
+//			setcookie($this->api_key, false, time() - 7200);
+//			setcookie($this->api_key, false, time() - 7200, $cookiePath);
+			setcookie($this->api_key, false, time() - 7200, $cookiePath, $this->base_domain);
 			unset($_COOKIE[$this->api_key]);
 		}
-
 		// now, clear the rest of the stored state
 		$this->user = 0;
 		$this->api_client->session_key = 0;
@@ -384,7 +386,8 @@ class Facebook {
 			$cookies['ss'] = $session_secret;
 		}
 
-		$cookiePath = cgn_url();
+//		$cookiePath = cgn_url();
+		$cookiePath = '/';
 		foreach ($cookies as $name => $val) {
 			setcookie($this->api_key . '_' . $name, $val, (int)$expires, $cookiePath, $this->base_domain);
 			$_COOKIE[$this->api_key . '_' . $name] = $val;

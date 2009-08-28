@@ -68,7 +68,6 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 
 		Cgn::loadModLibrary('Fbconnect::Facebook');
 		Cgn::loadModLibrary('Fbconnect::FacebookRestClient');
-		$fbObj = $this->getFb($req);
 
 		$req->clearSessionVar('fb_uid');
 		$req->clearSessionVar('fb_expires');
@@ -76,18 +75,52 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$req->clearSessionVar('fb_secret');
 		$req->clearSessionVar('fb_sig');
 
+		//log out of system
+		$user = $req->getUser();
+//			die('anonymous');
+		if ($user->isAnonymous()) {
+			$user->endSession();
+		} else {
+			$user->unBindSession();
+			$user->endSession();
+		}
+		$this->user = $user;
+		$signalResult = $this->emit('logout_success_after');
+		unset($this->user);
+
+//		$mySession =& Cgn_Session::getSessionObj();
+
+		//var_dump($_SESSION);
 		$this->presenter = 'redirect';
 		if (strlen($_SERVER['HTTP_REFERER'])) 
-			$next = urlencode($_SERVER['HTTP_REFERER']);
+			$next = $_SERVER['HTTP_REFERER'];
 		else
-			$next = urlencode(cgn_appurl('fbconnect'));
+			$next = cgn_appurl('fbconnect');
 
+		$fbObj = $this->getFb($req);
+
+//$next = cgn_appurl('fbconnect', 'main', 'debug');
+		try {
+			$fbObj->logout($next);
+		} catch (Exception $e) {
+			//maybe session is already expired
+		}
+
+		//since facebook library calls exit, 
+		//proceed with the following code when there's an exception
 		//hit this URL to stop FB Javascript from re-detecting logged-in status
 		//http://www.facebook.com/logout.php?app_key=XXX&session_key=XXX&extern=2&next=XXX&locale=en_US
 		$t['url'] = 'http://www.facebook.com/logout.php?app_key='.$fbObj->api_key.
-			'&session_key='.$fbObj->api_client->session_key.'&extern=2&next='.$next;
-		//don't call this any earlier, it also un-sets session_key
-		$fbObj->clear_cookie_state();
+			'&session_key='.$fbObj->api_client->session_key.'&connect_next=1&next='.urlencode($next);
+//var_dump($t['url']);exit();
+
+		try {
+			//don't call this any earlier, it also un-sets session_key
+			$fbObj->expire_session();
+			$fbObj->clear_cookie_state();
+		} catch (Exception $e) {
+			//maybe session is already expired
+		}
 	}
 
 	/**
@@ -97,6 +130,13 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 
 	}
 
+	function debugEvent($req, &$t) {
+echo "<pre>\n";
+var_dump($_COOKIE);
+var_dump($_GET);
+var_dump($_POST);
+exit();
+	}
 	/**
 	 * Show a "static" HTML page
 	 * From FB wiki:
@@ -107,29 +147,48 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 	 *   http://wiki.developers.facebook.com/index.php/Cross_Domain_Communication_Channel
 	 */
 	function xdreceiverEvent($req, &$t) {
+//http://hayley.metrofindings.com/biz_metrof/www/index.php/fbconnect.main.xdreceiver/?fb_login&fname=_parent&guid=0.0762305969099204&session=loggedout
 		$this->presenter = 'self';
 		$t['xdcomm'] = '<script src="http://static.ak.connect.facebook.com/js/api_lib/v0.4/XdCommReceiver.debug.js" type="text/javascript"></script>';
+
 
 		Cgn::loadModLibrary('Fbconnect::Facebook');
 		Cgn::loadModLibrary('Fbconnect::FacebookRestClient');
 		$apisecret = $this->getConfig('api.secret');
 
+		if (isset($_GET['session']) &&
+			$_GET['session'] == 'loggedout') {
+			return;
+		}
 		$session = json_decode($_GET['session']);
 		$fb_params = $this->_getXdParams($session);
 		$q = Facebook::generate_sig($fb_params, $apisecret);
+
+			$fbObj        = $this->getFb($req);
+
 		if ($session->sig && $q == $session->sig) {
+/*
 			$fbObj        = $this->getFb($req);
 			//HACK to fix Facebook's strange xdreceive handling of 
 			//logins and cookies
 			$fbObj->api_client->session_key = $session->session_key;
+			if (isset($session->base_domain)) {
+				$fbObj->base_domain = $session->session_key;
+			}
+ */
+/*
 			$fbObj->set_cookies($session->uid,
 				$session->session_key,
 				$session->expires,
 				$session->secret);
+//*/
 		} else {
 			//sig does not match
+			return;
 			die('sig does not match');
 		}
+
+
 
 		$fbExpires    = $session->session_expires;
 		$fbUid        = $session->uid;
@@ -141,6 +200,8 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 		$req->setSessionVar('fb_session_key',  $fbSessionKey);
 		$req->setSessionVar('fb_secret',       $fbSessionSecret);
 		$req->setSessionVar('fb_sig',          $session->sig);
+
+
 
 		$u = $req->getUser();
 		//find a user which has connected before
@@ -161,6 +222,7 @@ class Cgn_Service_Fbconnect_Main extends Cgn_Service {
 			}
 			$this->_createNewFbAcct($fbUid, $newUser, $fbObj, $fbInfos);
 		}
+
 	}
 
 	/**

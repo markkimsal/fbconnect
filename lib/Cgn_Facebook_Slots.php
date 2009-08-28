@@ -5,15 +5,23 @@ class Cgn_Facebook_Slots {
 	public $_configs = array();
 
 	public function getLoginBadge() {
+		//die('badge');
 		Cgn::loadModLibrary('Fbconnect::Facebook');
 		Cgn::loadModLibrary('Fbconnect::FacebookRestClient');
 
 		$apikey = $this->getConfig('api.key');
-		$this->_addJsToTemplate($apikey);
-
 		$req = Cgn_SystemRequest::getCurrentRequest();
+		$u = $req->getUser();
+
+		$this->_addJsToTemplate($apikey, $u);
+
 		$fbObj = $this->getFb($req);
 
+		try {
+			$fbUser = $fbObj->get_loggedin_user();
+		} catch (Exception $e) {
+			echo $e->getMessage() .' ' ;
+		}
 		$fbUid = $fbObj->user;
 
 		if ($fbUid < 1 && $fbObj->session_expires > 0) {
@@ -23,8 +31,16 @@ class Cgn_Facebook_Slots {
 			$fbUid = $fbObj->user;
 		}
 
+		if (!$fbUid) {
+			if ($u->isAnonymous()) {
+				$u->endSession();
+			} else {
+				$u->unBindSession();
+				$u->endSession();
+			}
+		}
+
 		if ($fbUid > 1 && $fbObj->session_expires > time()) {
-			$u = $req->getUser();
 			$this->_connectFbUser($fbUid, $u);
 			$show_logo = true;
 			$str3 = ' <br style="clear:both;" />
@@ -120,28 +136,78 @@ class Cgn_Facebook_Slots {
 	 * js functions fb_onConnectedSlot and fb_onNotConnectedSlot will 
 	 * be called if they exist and will be passed the UID of the user
 	 */
-	protected function _addJsToTemplate($apikey) {
+	protected function _addJsToTemplate($apikey, $user) {
 		Cgn_Template::addSiteJs('http://static.ak.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
+		//only add JS that has logged in listeners if the user is anonymous / not logged in
 		Cgn_Template::addSiteJs('<script type="text/javascript">
 				function onConnected(uid) {
+//alert(\'connected\');
 					if (document.getElementById(\'fb_login_image\')) {
 						if (window.fb_onConnectedSlot !== undefined)
 							fb_onConnectedSlot(uid)
-						else
+						else {
+							FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
 							window.location.reload();
+							//FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
+						}
 					}
 				}
 				function onNotConnected(uid) {
-					if (!document.getElementById(\'fb_login_image\')) {
-						if (window.fb_onNotConnectedSlot !== undefined)
+//alert(\'not connected\');
+					if (window.fb_onNotConnectedSlot !== undefined)
+						fb_onNotConnectedSlot(uid)
+					else  {
 						FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
-						else 
-						FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
+						//window.location.reload();
 					}
 				}
-			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'",
-			{"ifUserConnected":onConnected, "ifUserNotConnected":onNotConnected} ); </script>'
-		);
+			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'"); 
+</script>'
+);
+
+		if ($user->isAnonymous()) {
+			Cgn_Template::addSiteJs('<script type="text/javascript">
+            FB.Connect.ifUserConnected(
+				onConnected,
+				onNotConnected
+			); </script>'
+			);
+		}
+/*
+		if ($user->isAnonymous()) {
+echo "not logged in";
+			Cgn_Template::addSiteJs('<script type="text/javascript">
+
+            FB.ensureInit( function() {
+                FB.Connect.ifUserConnected(
+                    function() {  },
+					onNotConnected
+                );
+                FB.Connect.get_status().waitUntilReady( function( status ) {
+                    if( status === FB.ConnectState.connected ) {
+						onConnected();
+                    }
+                } );
+            } );
+</script>'
+			);
+		}  else {
+echo "logged in";
+			Cgn_Template::addSiteJs('<script type="text/javascript">
+            FB.ensureInit( function() {
+
+                FB.Connect.get_status().waitUntilReady( function( status ) {
+                    if( status === FB.ConnectState.connected ) {
+                    } else {
+                    alert("method 2: user not connected"); 
+						onNotConnected(status);
+					}
+                } );
+            } );
+</script>'
+			);
+		}
+*/
 	}
 
 	protected function _connectFbUser($fbuid, $u) {
