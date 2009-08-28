@@ -137,7 +137,13 @@ class Cgn_Facebook_Slots {
 	 * be called if they exist and will be passed the UID of the user
 	 */
 	protected function _addJsToTemplate($apikey, $user) {
-		Cgn_Template::addSiteJs('http://static.ak.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
+		if ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on')) {
+			Cgn_Template::addSiteJs('https://www.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
+			$xdrUrl = cgn_sappurl('fbconnect', 'main', 'xdreceiver');
+		} else {
+			Cgn_Template::addSiteJs('http://static.ak.connect.facebook.com/js/api_lib/v0.4/FeatureLoader.js.php');
+			$xdrUrl = cgn_appurl('fbconnect', 'main', 'xdreceiver');
+		}
 		//only add JS that has logged in listeners if the user is anonymous / not logged in
 		Cgn_Template::addSiteJs('<script type="text/javascript">
 				function onConnected(uid) {
@@ -161,7 +167,7 @@ class Cgn_Facebook_Slots {
 						//window.location.reload();
 					}
 				}
-			FB.init("'.$apikey.'", "'.cgn_appurl('fbconnect', 'main', 'xdreceiver').'"); 
+			FB.init("'.$apikey.'", "'.$xdrUrl.'"); 
 </script>'
 );
 

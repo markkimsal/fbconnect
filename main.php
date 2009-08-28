@@ -147,9 +147,12 @@ exit();
 	 *   http://wiki.developers.facebook.com/index.php/Cross_Domain_Communication_Channel
 	 */
 	function xdreceiverEvent($req, &$t) {
-//http://hayley.metrofindings.com/biz_metrof/www/index.php/fbconnect.main.xdreceiver/?fb_login&fname=_parent&guid=0.0762305969099204&session=loggedout
 		$this->presenter = 'self';
-		$t['xdcomm'] = '<script src="http://static.ak.connect.facebook.com/js/api_lib/v0.4/XdCommReceiver.debug.js" type="text/javascript"></script>';
+		if ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on')) {
+			$t['xdcomm'] = '<script src="https://www.connect.facebook.com/js/api_lib/v0.4/XdCommReceiver.debug.js" type="text/javascript"></script>';
+		} else {
+			$t['xdcomm'] = '<script src="http://static.ak.connect.facebook.com/js/api_lib/v0.4/XdCommReceiver.debug.js" type="text/javascript"></script>';
+		}
 
 
 		Cgn::loadModLibrary('Fbconnect::Facebook');
