@@ -31,6 +31,7 @@ class Cgn_Facebook_Slots {
 			$fbUid = $fbObj->user;
 		}
 
+		/*
 		if (!$fbUid) {
 			if ($u->isAnonymous()) {
 				$u->endSession();
@@ -39,12 +40,19 @@ class Cgn_Facebook_Slots {
 				$u->endSession();
 			}
 		}
+		 */
 
+		$loginResult = FALSE;
 		if ($fbUid > 1 && $fbObj->session_expires > time()) {
-			$this->_connectFbUser($fbUid, $u);
-			$show_logo = true;
+			$loginResult = $this->_connectFbUser($fbUid, $u);
+			if (!$loginResult) {
+				$fbObj->expire_session();
+			}
+		}
+		if ($loginResult) {
+			$show_logo = false;
 			$str3 = ' <br style="clear:both;" />
-				<div class="fb-badge-img" style="float:right"><fb:profile-pic uid="'.$fbUid.'" size="square" ' . ($show_logo ? ' facebook-logo="true"' : '') . '></fb:profile-pic>
+				<div class="fb-badge-img" style="float:right"><fb:profile-pic  uid="'.$fbUid.'" ' . ($show_logo ? ' facebook-logo="true"' : '') . '></fb:profile-pic>
 				</div>
 				<span class="fb-badge-name">Welcome, <fb:name uid="'.$fbUid.'" useyou="no"></fb:name></span>
 				<br/>
@@ -163,20 +171,25 @@ class Cgn_Facebook_Slots {
 					if (window.fb_onNotConnectedSlot !== undefined)
 						fb_onNotConnectedSlot(uid)
 					else  {
-						FB.XFBML.Host.parseDomTree();   /* window.location.reload(); */
+						FB.XFBML.Host.parseDomTree(); 
 						//window.location.reload();
 					}
 				}
+
+	        //FB.FBDebug.isEnabled = true;
 			FB.init("'.$apikey.'", "'.$xdrUrl.'"); 
 </script>'
 );
 
 		if ($user->isAnonymous()) {
 			Cgn_Template::addSiteJs('<script type="text/javascript">
-            FB.Connect.ifUserConnected(
-				onConnected,
-				onNotConnected
-			); </script>'
+				FB.ensureInit(
+					function(){
+						FB.Connect.ifUserConnected(
+							onConnected,
+							onNotConnected
+						)
+					}); </script>'
 			);
 		}
 /*
@@ -217,6 +230,11 @@ echo "logged in";
 	}
 
 	protected function _connectFbUser($fbuid, $u) {
+		//if the user is logged in, success
+		if (!$u->isAnonymous()) {
+			return TRUE;
+		}
+		//cannot find a user with that FBUID, fail
 		$newUser = $this->_findUserByFb($fbuid);
 		if (!$newUser) {
 			return FALSE;

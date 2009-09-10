@@ -153,6 +153,7 @@ exit();
 		} else {
 			$t['xdcomm'] = '<script src="http://static.ak.connect.facebook.com/js/api_lib/v0.4/XdCommReceiver.debug.js" type="text/javascript"></script>';
 		}
+		return;
 
 
 		Cgn::loadModLibrary('Fbconnect::Facebook');
