@@ -192,41 +192,6 @@ class Cgn_Facebook_Slots {
 					}); </script>'
 			);
 		}
-/*
-		if ($user->isAnonymous()) {
-echo "not logged in";
-			Cgn_Template::addSiteJs('<script type="text/javascript">
-
-            FB.ensureInit( function() {
-                FB.Connect.ifUserConnected(
-                    function() {  },
-					onNotConnected
-                );
-                FB.Connect.get_status().waitUntilReady( function( status ) {
-                    if( status === FB.ConnectState.connected ) {
-						onConnected();
-                    }
-                } );
-            } );
-</script>'
-			);
-		}  else {
-echo "logged in";
-			Cgn_Template::addSiteJs('<script type="text/javascript">
-            FB.ensureInit( function() {
-
-                FB.Connect.get_status().waitUntilReady( function( status ) {
-                    if( status === FB.ConnectState.connected ) {
-                    } else {
-                    alert("method 2: user not connected"); 
-						onNotConnected(status);
-					}
-                } );
-            } );
-</script>'
-			);
-		}
-*/
 	}
 
 	protected function _connectFbUser($fbuid, $u) {
